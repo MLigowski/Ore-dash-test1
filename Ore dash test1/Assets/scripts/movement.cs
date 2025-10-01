@@ -17,7 +17,7 @@ public class movement : MonoBehaviour
 
         if (direction > 0f)
         {
-            player.linearVelocity = new Vector2(direction * speed, player.velocity.y);
+            player.linearVelocity = new Vector2(direction * speed, player.linearVelocity.y);
         }
         else if (direction < 0f)
         {
