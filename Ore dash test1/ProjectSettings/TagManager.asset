@@ -42,13 +42,13 @@ TagManager:
     uniqueID: 4231635539
     locked: 0
   - name: midground
-    uniqueID: 1430204263
-    locked: 0
-  - name: foreground
-    uniqueID: 1180797473
+    uniqueID: 88076491
     locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: foreground
+    uniqueID: 3560054303
     locked: 0
   m_RenderingLayers:
   - Default
