@@ -2,15 +2,16 @@ using UnityEngine;
 
 public class StoneBlock : MonoBehaviour
 {
-    [Tooltip("Czas zanim blok zniknie po wykopaniu (dla efektów).")]
+    [Tooltip("Czas zanim blok zniknie po wykopaniu (dla efektow).")]
     public float breakTime = 0.1f;
 
     public void BreakBlock()
     {
-        // Tu mo¿esz dodaæ efekty cz¹steczek, dŸwiêk, animacjê itp.
+        // Tu m
         Debug.Log("Zniszczono kamienny blok!");
 
         // Usuwamy blok z gry
         Destroy(gameObject, breakTime);
     }
 }
+

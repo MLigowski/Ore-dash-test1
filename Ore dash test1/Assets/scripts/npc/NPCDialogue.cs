@@ -1,11 +1,13 @@
 using UnityEngine;
-using TMPro;  // Pamiêtaj o tym, jeœli u¿ywasz TextMeshPro
+using TMPro;
 
 public class NPCDialogue : MonoBehaviour
 {
-    public GameObject dialoguePanel;  // Panel dialogowy
-    public TMP_Text dialogueText;     // Tekst dialogu (TextMeshPro)
-    public string[] dialogueLines;    // Linie dialogu
+    public GameObject dialoguePanel;        // Panel dialogowy
+    public TMP_Text dialogueText;           // Tekst dialogu (TextMeshPro)
+    public string[] dialogueLines;          // Linie dialogu
+
+    public DamageUpgrade damageUpgrade;     // Referencja do skryptu DamageUpgrade
 
     private int currentLine = 0;
     private bool playerNearby = false;
@@ -30,6 +32,15 @@ public class NPCDialogue : MonoBehaviour
                 else
                 {
                     dialoguePanel.SetActive(false);
+                    // Po zakoñczeniu dialogu wywo³ujemy ulepszenie damage
+                    if (damageUpgrade != null)
+                    {
+                        damageUpgrade.UpgradeDamage();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Brak przypisanego DamageUpgrade w NPCDialogue!");
+                    }
                 }
             }
         }

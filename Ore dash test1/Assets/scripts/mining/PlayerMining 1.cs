@@ -5,13 +5,13 @@ public class PlayerMining : MonoBehaviour
     public static PlayerMining Instance;
 
     [Header("Ustawienia kopania")]
-    [Tooltip("Jak daleko gracz może sięgnąć, żeby kopać.")]
+    [Tooltip("Jak daleko gracz moze siegnac, zeby kopac.")]
     public float miningRange = 1.5f;
 
-    [Tooltip("Klawisz aktywujący kopanie.")]
+    [Tooltip("Klucz aktywujacy kopanie.")]
     public KeyCode mineKey = KeyCode.Tab;
 
-    [Tooltip("Czas w sekundach między kolejnymi kopaniami.")]
+    [Tooltip("Czas w sekundach miedzy kolejnymi kopaniami.")]
     public float miningCooldown = 1.0f;
 
     private float lastMineTime = -999f;
@@ -28,7 +28,7 @@ public class PlayerMining : MonoBehaviour
 
     void Start()
     {
-        // Ustawiamy maskę z dokładnymi nazwami warstw
+        // Ustawiamy mase z dokladnymi nazwami warstw
         miningLayerMask = LayerMask.GetMask("Mineral", "ground");
         Debug.Log("🎯 Warstwy kopania ustawione: Mineral + ground");
     }
@@ -44,10 +44,10 @@ public class PlayerMining : MonoBehaviour
 
     void TryMine()
     {
-        // Kierunek kopania zależy od kierunku, w którym zwrócony jest gracz
+        // Kierunek kopania zalezy od kierunku, w ktorym zwrocony jest gracz
         Vector2 direction = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
 
-        // Promień debugowy w scenie (czerwony)
+        // Promien debugowy w scenie (czerwony)
         Debug.DrawRay(transform.position, direction * miningRange, Color.red, 1f);
 
         // Raycast tylko po warstwach Mineral i ground
@@ -68,7 +68,7 @@ public class PlayerMining : MonoBehaviour
             MineralBlock mineral = hit.collider.GetComponent<MineralBlock>();
             if (mineral != null)
             {
-                Debug.Log("💎 Trafiono minerał!");
+                Debug.Log("💎 Trafiono mineral!");
                 mineral.BreakBlock();
                 return;
             }
@@ -80,7 +80,7 @@ public class PlayerMining : MonoBehaviour
             StoneBlock stone = hit.collider.GetComponent<StoneBlock>();
             if (stone != null)
             {
-                Debug.Log("🪨 Trafiono kamień!");
+                Debug.Log("🪨 Trafiono kamien!");
                 stone.BreakBlock();
                 return;
             }
@@ -102,4 +102,23 @@ public class PlayerMining : MonoBehaviour
             Debug.LogWarning("⚠️ Brak MineralUIManager.Instance w scenie!");
         }
     }
+
+    // NOWE METODY – do ulepszania damage
+
+    public int GetMineralCount()
+    {
+        return mineralsCollected;
+    }
+
+    public void SpendMinerals(int amount)
+    {
+        mineralsCollected -= amount;
+        mineralsCollected = Mathf.Max(0, mineralsCollected);
+
+        if (MineralUIManager.Instance != null)
+        {
+            MineralUIManager.Instance.UpdateMineralCount(mineralsCollected, 0); // bez animacji koloru
+        }
+    }
 }
+

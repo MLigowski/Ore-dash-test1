@@ -45,7 +45,7 @@ public class MineralUIManager : MonoBehaviour
 
     IEnumerator FlashColor(Color targetColor)
     {
-        float duration = 0.4f;
+        float duration = 1f;
         float t = 0f;
 
         // rozbłysk koloru
