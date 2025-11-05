@@ -40,7 +40,6 @@ public class PlayerMovement : MonoBehaviour
     private bool _hasJumpedSinceGrounded;
     [SerializeField] private float jumpCooldown = 0.2f;
     private float _lastJumpTime;
-
     #endregion
 
     #region Dash Variables
@@ -101,7 +100,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 LastOnGroundTime = Data.coyoteTime;
                 _hasJumpedSinceGrounded = false;
-                _airDashesUsed = 0; // ✅ reset dashy po lądowaniu
+                _airDashesUsed = 0; // reset dashy po lądowaniu
             }
 
             if (((Physics2D.OverlapBox(_frontWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight)
@@ -116,7 +115,7 @@ public class PlayerMovement : MonoBehaviour
         }
         #endregion
 
-        if (IsDashing) return; // ⛔ Zatrzymaj logikę, gdy dash trwa
+        if (IsDashing) return; // zatrzymaj logikę podczas dashu
 
         #region JUMP CHECKS
         if (IsJumping && RB.linearVelocity.y < 0)
@@ -249,6 +248,8 @@ public class PlayerMovement : MonoBehaviour
     private void Jump()
     {
         _lastJumpTime = Time.time;
+        LastPressedJumpTime = 0; // reset po skoku
+
         float force = Data.jumpForce;
         if (RB.linearVelocity.y < 0)
             force -= RB.linearVelocity.y;
@@ -280,8 +281,9 @@ public class PlayerMovement : MonoBehaviour
     {
         float speedDif = Data.slideSpeed - RB.linearVelocity.y;
         float movement = speedDif * Data.slideAccel;
-        movement = Mathf.Clamp(movement, -Mathf.Abs(speedDif) * (1 / Time.fixedDeltaTime), Mathf.Abs(speedDif) * (1 / Time.fixedDeltaTime));
-        RB.AddForce(movement * Vector2.up);
+
+        // Poprawka: siła w dół, nie w górę
+        RB.AddForce(movement * Vector2.down);
     }
     #endregion
 
@@ -318,12 +320,18 @@ public class PlayerMovement : MonoBehaviour
 
         SetGravityScale(originalGravity);
         IsDashing = false;
+
+        // Ograniczenie prędkości po dashu
+        RB.linearVelocity = new Vector2(RB.linearVelocity.x * 0.5f, RB.linearVelocity.y);
     }
     #endregion
 
     #region CHECK METHODS
     public void CheckDirectionToFace(bool isMovingRight)
     {
+        // Nie obracaj gracza w trakcie dashu lub wall jumpa
+        if (IsDashing || IsWallJumping) return;
+
         if (isMovingRight != IsFacingRight)
             Turn();
     }
