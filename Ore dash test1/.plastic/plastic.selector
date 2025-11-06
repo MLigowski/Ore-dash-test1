@@ -1,4 +1,0 @@
-repository "Ore dash test1/Ore dash test1@20067515684046@cloud"
-  path "/"
-    br "/main"
-    co "/main"
