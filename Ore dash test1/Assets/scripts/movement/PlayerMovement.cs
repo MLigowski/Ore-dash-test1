@@ -100,7 +100,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 LastOnGroundTime = Data.coyoteTime;
                 _hasJumpedSinceGrounded = false;
-                _airDashesUsed = 0; // reset dashy po lądowaniu
+                _airDashesUsed = 0;
             }
 
             if (((Physics2D.OverlapBox(_frontWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight)
@@ -115,7 +115,7 @@ public class PlayerMovement : MonoBehaviour
         }
         #endregion
 
-        if (IsDashing) return; // zatrzymaj logikę podczas dashu
+        if (IsDashing) return;
 
         #region JUMP CHECKS
         if (IsJumping && RB.linearVelocity.y < 0)
@@ -248,7 +248,7 @@ public class PlayerMovement : MonoBehaviour
     private void Jump()
     {
         _lastJumpTime = Time.time;
-        LastPressedJumpTime = 0; // reset po skoku
+        LastPressedJumpTime = 0;
 
         float force = Data.jumpForce;
         if (RB.linearVelocity.y < 0)
@@ -282,7 +282,6 @@ public class PlayerMovement : MonoBehaviour
         float speedDif = Data.slideSpeed - RB.linearVelocity.y;
         float movement = speedDif * Data.slideAccel;
 
-        // Poprawka: siła w dół, nie w górę
         RB.AddForce(movement * Vector2.down);
     }
     #endregion
@@ -321,7 +320,6 @@ public class PlayerMovement : MonoBehaviour
         SetGravityScale(originalGravity);
         IsDashing = false;
 
-        // Ograniczenie prędkości po dashu
         RB.linearVelocity = new Vector2(RB.linearVelocity.x * 0.5f, RB.linearVelocity.y);
     }
     #endregion
@@ -329,7 +327,6 @@ public class PlayerMovement : MonoBehaviour
     #region CHECK METHODS
     public void CheckDirectionToFace(bool isMovingRight)
     {
-        // Nie obracaj gracza w trakcie dashu lub wall jumpa
         if (IsDashing || IsWallJumping) return;
 
         if (isMovingRight != IsFacingRight)
@@ -363,4 +360,5 @@ public class PlayerMovement : MonoBehaviour
     }
     #endregion
 }
+
 

@@ -1,226 +1,264 @@
+using System.Collections;
 using UnityEngine;
 using TMPro;
 
 public class Health : MonoBehaviour
 {
     [Header("Health Settings")]
-    [SerializeField] private int health = 100;
-    private int MAX_HEALTH = 100;
+    public int maxHealth = 100;
+    public int currentHealth;
 
-    [Header("Damage & Heal Settings")]
-    [Tooltip("How much damage you take when pressing Right Ctrl")]
-    public int selfDamageAmount = 10;
-
-    [Tooltip("How much HP you heal when pressing H")]
+    [Header("Healing")]
     public int healAmount = 25;
+    public float healCooldown = 10f;
+    private float healTimer;
 
-    [Tooltip("Cooldown time for healing in seconds")]
-    public float healCooldown = 15f;
+    [Header("Floating HP (3D Text Prefab)")]
+    public GameObject healthTextPrefab;
+    private GameObject healthTextObject;
+    private TextMeshPro healthTextTMP;
+    public Vector3 healthOffset = new Vector3(0f, 1.2f, 0f);
 
-    private float lastHealTime = -999f;
+    [Header("UI Canvas")]
+    public TextMeshProUGUI healCooldownText;
+    public TextMeshProUGUI deathCounterText;
+    private bool isDead = false;
 
-    [Header("UI (World Text)")]
-    public TextMeshPro worldTextPrefab; // Prefab TMP 3D
-    public Vector3 textOffset = new Vector3(0, 1.2f, 0);
-    private TextMeshPro worldTextInstance;
+    [Header("Respawn")]
+    public float respawnTextDuration = 2f;
+    private PlayerRespawn respawnScript;
 
-    [Header("UI (Heal Cooldown Display)")]
-    public TextMeshProUGUI healCooldownTextPrefab; // Prefab TMP UI
-    private TextMeshProUGUI healCooldownTextInstance;
+    private SpriteRenderer spriteRenderer;
+    private int deathCount = 0;
+
+    // references for disabling input/attack
+    private Rigidbody2D rb;
+    private PlayerAttack playerAttack;
+    private PlayerMovement playerMovement;
+
+    public static bool PlayerIsDead = false;
+    private Transform mainCam;  // kamera gracza
+    private bool cameraFrozen = false;
+
+
+    void Awake()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        rb = GetComponent<Rigidbody2D>();
+        playerAttack = GetComponent<PlayerAttack>();
+        playerMovement = GetComponent<PlayerMovement>();
+    }
 
     void Start()
     {
-        // Create health text above character
-        if (worldTextPrefab != null)
-        {
-            worldTextInstance = Instantiate(worldTextPrefab, transform.position + textOffset, Quaternion.identity);
-            worldTextInstance.text = $"HP: {health}/{MAX_HEALTH}";
-            worldTextInstance.alignment = TextAlignmentOptions.Center;
-            worldTextInstance.fontSize = 3f;
+        healTimer = healCooldown;
+        respawnScript = FindObjectOfType<PlayerRespawn>();
+        if (Camera.main != null)
+            mainCam = Camera.main.transform;
+        currentHealth = maxHealth;
 
-            var renderer = worldTextInstance.GetComponent<MeshRenderer>();
-            if (renderer != null)
-            {
-                renderer.sortingLayerName = "Default";
-                renderer.sortingOrder = 200;
-            }
-
-            UpdateHealthColor();
-        }
-        else
+        if (healthTextPrefab != null)
         {
-            Debug.LogWarning("No TMP world text prefab assigned in Health.cs");
+            healthTextObject = Instantiate(healthTextPrefab, transform.position + healthOffset, Quaternion.identity);
+            healthTextTMP = healthTextObject.GetComponent<TextMeshPro>();
         }
 
-        // Create heal cooldown text in corner
-        if (healCooldownTextPrefab != null)
-        {
-            // ? Nowa wersja metody
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas != null)
-            {
-                healCooldownTextInstance = Instantiate(healCooldownTextPrefab, canvas.transform);
-                healCooldownTextInstance.rectTransform.anchorMin = new Vector2(0, 1);
-                healCooldownTextInstance.rectTransform.anchorMax = new Vector2(0, 1);
-                healCooldownTextInstance.rectTransform.pivot = new Vector2(0, 1);
-                healCooldownTextInstance.rectTransform.anchoredPosition = new Vector2(20, -20);
-                healCooldownTextInstance.fontSize = 20;
-                healCooldownTextInstance.color = Color.black;
-                healCooldownTextInstance.text = "";
-            }
-            else
-            {
-                Debug.LogWarning("No Canvas found in the scene for healCooldownTextPrefab!");
-            }
-        }
+        UpdateHealthText();
+        UpdateHealCooldownUI();
+        UpdateDeathCounterUI();
     }
 
     void Update()
     {
-        // Keep text above the character
-        if (worldTextInstance != null)
+        healTimer += Time.deltaTime;
+        if (Input.GetKeyDown(KeyCode.H) && healTimer >= healCooldown)
         {
-            Vector3 pos = transform.position + textOffset;
-            pos.z = -0.01f;
-            worldTextInstance.transform.position = pos;
+            Heal(healAmount);
+            healTimer = 0f;
+            UpdateHealCooldownUI();
         }
 
-        // Heal key (H)
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            TryHeal();
-        }
-
-        // Self-damage key (Right Ctrl)
-        if (Input.GetKeyDown(KeyCode.RightControl))
-        {
-            Damage(selfDamageAmount);
-        }
-
-        // Update heal cooldown text
-        UpdateHealCooldownDisplay();
+        if (healTimer < healCooldown)
+            UpdateHealCooldownUI();
     }
 
-    private void TryHeal()
+    void LateUpdate()
     {
-        if (Time.time - lastHealTime < healCooldown)
+        if (healthTextObject != null)
         {
-            float remaining = healCooldown - (Time.time - lastHealTime);
-            Debug.Log($"?? Heal on cooldown ({remaining:F1}s remaining)");
-            return;
+            healthTextObject.transform.position = transform.position + healthOffset;
+            healthTextObject.transform.rotation = Quaternion.identity;
         }
 
-        Heal(healAmount);
-        lastHealTime = Time.time;
-        Debug.Log($"?? You healed for {healAmount} HP!");
-    }
-
-    private void UpdateHealCooldownDisplay()
-    {
-        if (healCooldownTextInstance == null)
-            return;
-
-        float elapsed = Time.time - lastHealTime;
-        float remaining = healCooldown - elapsed;
-
-        if (remaining > 0)
+        // --- DODAJ TO NA KOÑCU ---
+        if (mainCam != null)
         {
-            float percent = Mathf.Clamp01(remaining / healCooldown);
-
-            // Color transitions: red ? yellow ? green
-            Color color;
-            if (percent > 0.7f)
-                color = Color.red;
-            else if (percent > 0.4f)
-                color = Color.Lerp(Color.yellow, Color.red, (percent - 0.4f) / 0.3f);
+            if (cameraFrozen)
+            {
+                // Kamera stoi w miejscu, nic nie robi
+                return;
+            }
             else
-                color = Color.green;
-
-            string colorHex = ColorUtility.ToHtmlStringRGB(color);
-
-            healCooldownTextInstance.text =
-                $"<color=#000000>Heal ready in:</color> <color=#{colorHex}>{remaining:F1}s</color>";
-        }
-        else
-        {
-            string readyColorHex = ColorUtility.ToHtmlStringRGB(new Color(0.37f, 1f, 0.37f)); // #5EFF5E approx
-            healCooldownTextInstance.text = $"<color=#{readyColorHex}>Heal ready</color>";
+            {
+                // Kamera œledzi gracza
+                mainCam.position = new Vector3(
+                    transform.position.x,
+                    transform.position.y,
+                    mainCam.position.z
+                );
+            }
         }
     }
+
 
     public void Damage(int amount)
     {
-        if (amount < 0)
-            throw new System.ArgumentOutOfRangeException("Cannot have negative Damage");
+        if (respawnScript != null && respawnScript.IsInvincible())
+            return;
 
-        health -= amount;
-        health = Mathf.Max(health, 0);
+        if (isDead) return;
 
+        currentHealth -= amount;
+        currentHealth = Mathf.Max(0, currentHealth);
         UpdateHealthText();
 
-        if (health <= 0)
+        if (currentHealth <= 0)
             Die();
-        else
-            Debug.Log($"?? Took {amount} damage! Current HP: {health}/{MAX_HEALTH}");
     }
 
     public void Heal(int amount)
     {
-        if (amount < 0)
-            throw new System.ArgumentOutOfRangeException("Cannot have negative healing");
+        if (isDead) return;
 
-        health = Mathf.Min(health + amount, MAX_HEALTH);
+        currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
         UpdateHealthText();
-    }
-
-    private void UpdateHealthText()
-    {
-        if (worldTextInstance == null) return;
-
-        worldTextInstance.text = $"HP: {health}/{MAX_HEALTH}";
-        UpdateHealthColor();
-    }
-
-    private void UpdateHealthColor()
-    {
-        if (worldTextInstance == null) return;
-
-        float healthPercent = (float)health / MAX_HEALTH;
-
-        if (healthPercent > 0.7f)
-        {
-            worldTextInstance.color = Color.green;
-        }
-        else if (healthPercent > 0.4f)
-        {
-            worldTextInstance.color = Color.Lerp(
-                new Color(1f, 0.9f, 0f),
-                new Color(1f, 0.5f, 0f),
-                (0.7f - healthPercent) / 0.3f
-            );
-        }
-        else
-        {
-            worldTextInstance.color = Color.red;
-        }
     }
 
     private void Die()
     {
-        Debug.Log($"{gameObject.name} has died!");
-        if (worldTextInstance != null)
-            Destroy(worldTextInstance.gameObject);
-        if (healCooldownTextInstance != null)
-            Destroy(healCooldownTextInstance.gameObject);
+        if (isDead) return;
+        isDead = true;
+        PlayerIsDead = true; // ? Ustawienie flagi
+        deathCount++;
+        UpdateDeathCounterUI();
 
-        Destroy(gameObject);
+        if (healthTextTMP != null)
+        {
+            healthTextTMP.text = "YOU ARE DEAD";
+            healthTextTMP.fontSize = 14f;
+            healthTextTMP.color = Color.red;
+        }
+
+        // disable player controls + physics
+        DisablePlayerControls();
+
+        if (spriteRenderer != null)
+            spriteRenderer.enabled = false;
+
+        if (mainCam != null)
+        {
+            cameraFrozen = true;  // zapamiêtaj ¿e kamera stoi
+        }
+
+        StartCoroutine(RespawnRoutine());
+    }
+
+    private IEnumerator RespawnRoutine()
+    {
+        yield return new WaitForSeconds(respawnTextDuration);
+
+        if (respawnScript != null)
+            respawnScript.RespawnPlayer();
+
+        if (mainCam != null)
+        {
+            cameraFrozen = false;  // kamera znowu œledzi
+        }
+
+        currentHealth = maxHealth;
+        UpdateHealthText();
+
+        if (spriteRenderer != null)
+            spriteRenderer.enabled = true;
+
+        EnablePlayerControls();
+        isDead = false;
+        PlayerIsDead = false; // ? reset flagi po odrodzeniu
+        UpdateHealCooldownUI();
+    }
+
+    private void DisablePlayerControls()
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.simulated = false; // stop physics
+        }
+
+        if (playerAttack != null)
+            playerAttack.enabled = false;
+
+        if (playerMovement != null)
+            playerMovement.enabled = false;
+    }
+
+    private void EnablePlayerControls()
+    {
+        if (rb != null)
+            rb.simulated = true;
+
+        if (playerAttack != null)
+            playerAttack.enabled = true;
+
+        if (playerMovement != null)
+            playerMovement.enabled = true;
+    }
+
+    private void UpdateHealthText()
+    {
+        if (healthTextTMP == null) return;
+
+        if (currentHealth <= 0)
+        {
+            healthTextTMP.text = "YOU ARE DEAD";
+            healthTextTMP.color = Color.red;
+            healthTextTMP.fontSize = 14f;
+            return;
+        }
+
+        healthTextTMP.fontSize = 3f;
+        healthTextTMP.text = $"HP: {currentHealth}/{maxHealth}";
+
+        float pct = (float)currentHealth / maxHealth;
+        if (pct > 0.66f) healthTextTMP.color = Color.green;
+        else if (pct > 0.33f) healthTextTMP.color = new Color(1f, 0.85f, 0f);
+        else healthTextTMP.color = Color.red;
+    }
+
+    private void UpdateHealCooldownUI()
+    {
+        if (healCooldownText == null) return;
+
+        float remaining = Mathf.Max(0f, healCooldown - healTimer);
+        if (remaining <= 0f)
+        {
+            healCooldownText.text = "<color=green>Heal Ready (H)</color>";
+        }
+        else
+        {
+            healCooldownText.text = $"<color=orange>Heal CD: {remaining:F1}s</color>";
+        }
+    }
+
+    private void UpdateDeathCounterUI()
+    {
+        if (deathCounterText == null) return;
+        deathCounterText.text = $"Deaths: {deathCount}";
     }
 
     private void OnDestroy()
     {
-        if (worldTextInstance != null)
-            Destroy(worldTextInstance.gameObject);
-        if (healCooldownTextInstance != null)
-            Destroy(healCooldownTextInstance.gameObject);
+        if (healthTextObject != null)
+            Destroy(healthTextObject);
     }
 }
