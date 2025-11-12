@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -39,7 +39,7 @@ public class Health : MonoBehaviour
     public static bool PlayerIsDead = false;
     private Transform mainCam;  // kamera gracza
     private bool cameraFrozen = false;
-
+    public static bool IsInvincible = false;
 
     void Awake()
     {
@@ -90,7 +90,7 @@ public class Health : MonoBehaviour
             healthTextObject.transform.rotation = Quaternion.identity;
         }
 
-        // --- DODAJ TO NA KOÑCU ---
+        // --- DODAJ TO NA KOÅƒCU ---
         if (mainCam != null)
         {
             if (cameraFrozen)
@@ -100,7 +100,7 @@ public class Health : MonoBehaviour
             }
             else
             {
-                // Kamera œledzi gracza
+                // Kamera Å›ledzi gracza
                 mainCam.position = new Vector3(
                     transform.position.x,
                     transform.position.y,
@@ -138,7 +138,7 @@ public class Health : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
-        PlayerIsDead = true; // ? Ustawienie flagi
+        PlayerIsDead = true; // âœ… Ustawienie flagi
         deathCount++;
         UpdateDeathCounterUI();
 
@@ -157,7 +157,7 @@ public class Health : MonoBehaviour
 
         if (mainCam != null)
         {
-            cameraFrozen = true;  // zapamiêtaj ¿e kamera stoi
+            cameraFrozen = true;  // zapamiÄ™taj Å¼e kamera stoi
         }
 
         StartCoroutine(RespawnRoutine());
@@ -172,7 +172,7 @@ public class Health : MonoBehaviour
 
         if (mainCam != null)
         {
-            cameraFrozen = false;  // kamera znowu œledzi
+            cameraFrozen = false;  // kamera znowu Å›ledzi
         }
 
         currentHealth = maxHealth;
@@ -183,7 +183,7 @@ public class Health : MonoBehaviour
 
         EnablePlayerControls();
         isDead = false;
-        PlayerIsDead = false; // ? reset flagi po odrodzeniu
+        PlayerIsDead = false; // âœ… reset flagi po odrodzeniu
         UpdateHealCooldownUI();
     }
 
