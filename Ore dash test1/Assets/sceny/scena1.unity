@@ -970,7 +970,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   miningRange: 1.5
-  miningPower: 1
+  miningPower: 3
   mineKey: 101
   miningCooldown: 1
 --- !u!114 &421797650
@@ -3727,7 +3727,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &1714292812
 SpriteRenderer:
   m_ObjectHideFlags: 0
