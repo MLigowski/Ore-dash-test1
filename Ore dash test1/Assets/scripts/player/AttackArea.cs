@@ -1,56 +1,119 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(CircleCollider2D))]
+[RequireComponent(typeof(LineRenderer))]
 public class AttackArea : MonoBehaviour
 {
     [Header("Attack Settings")]
-    public int damage = 3;            // ile HP zabiera atak
-    public float range = 1f;          // zasi?g ataku od ?rodka gracza
-    public float flashDuration = 0.1f; // jak d?ugo ?wieci na czerwono
+    [Tooltip("Ile HP zabiera atak.")]
+    public int damage = 3;
 
-    [Header("Efekt pod?wietlenia")]
-    [Tooltip("Renderer lub sprite u?ywany jako efekt ataku (mo?e by? np. czerwona p�?przezroczysta kula)")]
-    public SpriteRenderer flashRenderer;
+    [Tooltip("Promień ataku (zasięg).")]
+    public float range = 1.2f;
 
-    private void Start()
+    [Tooltip("Jak długo atak jest aktywny (sekundy).")]
+    public float attackDuration = 0.15f;
+
+    [Tooltip("Jak długo widoczne jest czerwone podświetlenie.")]
+    public float flashDuration = 0.2f;
+
+    private Transform player;
+    private CircleCollider2D circleCollider;
+    private LineRenderer lineRenderer;
+
+    private bool canDamage = false;
+
+    void Start()
     {
-        if (flashRenderer != null)
+        // Szukamy gracza
+        player = GameObject.FindGameObjectWithTag("Player")?.transform;
+        if (player == null)
         {
-            flashRenderer.enabled = false; // domy?lnie wy??czony
+            Debug.LogError("❌ AttackArea: Nie znaleziono obiektu z tagiem 'Player'!");
+            return;
         }
+
+        // Collider
+        circleCollider = GetComponent<CircleCollider2D>();
+        circleCollider.isTrigger = true;
+        circleCollider.enabled = false; // tylko podczas ataku
+
+        // LineRenderer — efekt czerwonego koła
+        lineRenderer = GetComponent<LineRenderer>();
+        lineRenderer.useWorldSpace = false;
+        lineRenderer.loop = true;
+        lineRenderer.positionCount = 64;
+        lineRenderer.startWidth = 0.04f;
+        lineRenderer.endWidth = 0.04f;
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        lineRenderer.startColor = new Color(1f, 0f, 0f, 0f);
+        lineRenderer.endColor = new Color(1f, 0f, 0f, 0f);
+
+        DrawCircle();
     }
 
-    private void OnDrawGizmosSelected()
+    void Update()
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, range);
+        if (player == null) return;
+        transform.position = player.position; // AttackArea podąża za graczem
+    }
+
+    public void PerformAttack(int currentDamage)
+    {
+        damage = currentDamage; // pobiera damage z PlayerStats
+        StartCoroutine(AttackRoutine());
+    }
+
+
+    private IEnumerator AttackRoutine()
+    {
+        canDamage = true;
+        circleCollider.radius = range;
+        circleCollider.enabled = true;
+        FlashCircle(true);
+
+        yield return new WaitForSeconds(attackDuration);
+
+        canDamage = false;
+        circleCollider.enabled = false;
+
+        yield return new WaitForSeconds(flashDuration - attackDuration);
+
+        FlashCircle(false);
     }
 
     private void OnTriggerEnter2D(Collider2D collider)
     {
-        Health health = collider.GetComponent<Health>();
-        if (health != null)
-        {
-            health.Damage(damage);
-        }
+        if (!canDamage) return;
 
-        var slime = collider.GetComponent<Slime>();
-        if (slime != null)
+        if (collider.TryGetComponent(out Health health))
+            health.Damage(damage);
+
+        if (collider.TryGetComponent(out Slime slime))
             slime.TakeDamage(damage);
 
-        var zombie = collider.GetComponent<Zombie>();
-        if (zombie != null)
+        if (collider.TryGetComponent(out Zombie zombie))
             zombie.TakeDamage(damage);
-
-        // Efekt pod?wietlenia
-        if (flashRenderer != null)
-            StartCoroutine(FlashEffect());
     }
 
-    private IEnumerator FlashEffect()
+    private void DrawCircle()
     {
-        flashRenderer.enabled = true;
-        yield return new WaitForSeconds(flashDuration);
-        flashRenderer.enabled = false;
+        float angleStep = 360f / lineRenderer.positionCount;
+        for (int i = 0; i < lineRenderer.positionCount; i++)
+        {
+            float angle = Mathf.Deg2Rad * i * angleStep;
+            float x = Mathf.Cos(angle) * range;
+            float y = Mathf.Sin(angle) * range;
+            lineRenderer.SetPosition(i, new Vector3(x, y, 0));
+        }
+    }
+
+    private void FlashCircle(bool show)
+    {
+        Color start = show ? new Color(1f, 0f, 0f, 0.3f) : new Color(1f, 0f, 0f, 0f);
+        Color end = show ? new Color(1f, 0f, 0f, 0.3f) : new Color(1f, 0f, 0f, 0f);
+        lineRenderer.startColor = start;
+        lineRenderer.endColor = end;
     }
 }

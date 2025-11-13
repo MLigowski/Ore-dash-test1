@@ -239,8 +239,10 @@ public class Health : MonoBehaviour
     {
         if (healCooldownText == null) return;
 
-        float remaining = Mathf.Max(0f, healCooldown - healTimer);
-        if (remaining <= 0f)
+        float remaining = healCooldown - healTimer;
+
+        // Jeśli cooldown się skończył, od razu pokazuj zielony napis
+        if (remaining <= 0.05f) // mała tolerancja żeby nie pokazywało "0.0s"
         {
             healCooldownText.text = "<color=green>Heal Ready (H)</color>";
         }
@@ -249,6 +251,7 @@ public class Health : MonoBehaviour
             healCooldownText.text = $"<color=orange>Heal CD: {remaining:F1}s</color>";
         }
     }
+
 
     private void UpdateDeathCounterUI()
     {

@@ -223,12 +223,14 @@ public class PlayerMovement : MonoBehaviour
         if (LastOnGroundTime <= 0)
             _airDashesUsed++;
 
-        Vector2 inputDir = new Vector2(_moveInput.x, _moveInput.y);
+        
+        Vector2 inputDir = new Vector2(_moveInput.x, 0f);
         if (inputDir == Vector2.zero)
             inputDir = IsFacingRight ? Vector2.right : Vector2.left;
 
         inputDir.Normalize();
         _dashDir = inputDir;
+
 
         float originalGravity = RB.gravityScale;
         SetGravityScale(0);
