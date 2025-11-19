@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -15,10 +15,16 @@ public class PlayerMovement : MonoBehaviour
     public bool IsSliding { get; private set; }
     public bool IsDashing { get; private set; }
 
+    private bool _canWallJump = true;
+
+
     public float LastOnGroundTime { get; private set; }
     public float LastOnWallTime { get; private set; }
     public float LastOnWallRightTime { get; private set; }
     public float LastOnWallLeftTime { get; private set; }
+    private float _lastWallJumpTime;
+    [SerializeField] private float wallJumpCooldown = 0.1f; // cooldown w sekundach
+
 
     private float _wallJumpStartTime;
     private int _lastWallJumpDir;
@@ -102,21 +108,25 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // === WALL CHECKS ===
-        if (!IsDashing && !IsJumping)
+        if (!IsDashing)
         {
             bool rightWall = ((Physics2D.OverlapBox(_frontWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight)
-                || (Physics2D.OverlapBox(_backWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && !IsFacingRight)) && !IsWallJumping;
+                             || (Physics2D.OverlapBox(_backWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && !IsFacingRight))
+                             && !IsWallJumping;
 
             bool leftWall = ((Physics2D.OverlapBox(_frontWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && !IsFacingRight)
-                || (Physics2D.OverlapBox(_backWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight)) && !IsWallJumping;
+                            || (Physics2D.OverlapBox(_backWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight))
+                            && !IsWallJumping;
 
             if (rightWall)
                 LastOnWallRightTime = Data.coyoteTime;
+
             if (leftWall)
                 LastOnWallLeftTime = Data.coyoteTime;
 
             LastOnWallTime = Mathf.Max(LastOnWallLeftTime, LastOnWallRightTime);
         }
+
 
         if (IsDashing) return;
 
@@ -153,8 +163,22 @@ public class PlayerMovement : MonoBehaviour
             WallJump(_lastWallJumpDir);
         }
 
+        // ZAWSZE: jesli idę do oory  koniec slajdu natychmiast
+        if (RB.linearVelocity.y > 0.05f)
+            IsSliding = false;
+
         // === SLIDE CHECK ===
-        IsSliding = CanSlide() && ((LastOnWallLeftTime > 0 && _moveInput.x < 0) || (LastOnWallRightTime > 0 && _moveInput.x > 0));
+        IsSliding =
+            CanSlide()
+            && !IsWallJumping
+            && (
+                (LastOnWallLeftTime > 0 && _moveInput.x < -0.1f) ||
+                (LastOnWallRightTime > 0 && _moveInput.x > 0.1f)
+            );
+
+
+
+
 
         // === GRAVITY ===
         if (IsSliding)
@@ -255,6 +279,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallJump(int dir)
     {
+        _lastWallJumpTime = Time.time;
+        _canWallJump = true; // blokada
         LastPressedJumpTime = 0;
         LastOnGroundTime = 0;
         LastOnWallRightTime = 0;
@@ -269,16 +295,25 @@ public class PlayerMovement : MonoBehaviour
             force.y -= RB.linearVelocity.y;
 
         RB.AddForce(force, ForceMode2D.Impulse);
+        IsSliding = false;
+        SetGravityScale(Data.gravityScale);
     }
+
+
 
     private bool CanJump() => LastOnGroundTime > 0 && !IsJumping;
 
     private bool CanWallJump()
     {
-        return LastPressedJumpTime > 0 && LastOnWallTime > 0 && LastOnGroundTime <= 0 &&
+        return
+            LastPressedJumpTime > 0 &&
+            LastOnWallTime > 0 &&
+            LastOnGroundTime <= 0 &&
+            _canWallJump &&
+            Time.time - _lastWallJumpTime >= wallJumpCooldown &&
             (!IsWallJumping ||
-            (LastOnWallRightTime > 0 && _lastWallJumpDir == 1) ||
-            (LastOnWallLeftTime > 0 && _lastWallJumpDir == -1));
+             (LastOnWallRightTime > 0 && _lastWallJumpDir == 1) ||
+             (LastOnWallLeftTime > 0 && _lastWallJumpDir == -1));
     }
 
     private bool CanJumpCut() => IsJumping && RB.linearVelocity.y > 0;
@@ -287,6 +322,10 @@ public class PlayerMovement : MonoBehaviour
     #region WALL SLIDE
     private void Slide()
     {
+        // HARD BLOCK → zapobiega wiszeniu
+        if (RB.linearVelocity.y > 0)
+            return;
+
         if (RB.linearVelocity.y > 0)
             RB.AddForce(-RB.linearVelocity.y * Vector2.up, ForceMode2D.Impulse);
 
@@ -297,10 +336,20 @@ public class PlayerMovement : MonoBehaviour
         RB.AddForce(movement * Vector2.up);
     }
 
+
     private bool CanSlide()
     {
-        return LastOnWallTime > 0 && !IsJumping && !IsWallJumping && !IsDashing && LastOnGroundTime <= 0;
+        return
+            LastOnWallTime > 0 &&
+            !IsWallJumping &&
+            !IsDashing &&
+            LastOnGroundTime <= 0 &&
+            RB.linearVelocity.y <= 0;
     }
+
+
+
+
     #endregion
 
     #region DASH METHODS
