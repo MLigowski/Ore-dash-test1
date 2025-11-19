@@ -949,6 +949,9 @@ MonoBehaviour:
   Health: {fileID: 0}
   _groundCheckPoint: {fileID: 722540239}
   _groundCheckSize: {x: 0.6, y: 0.1}
+  _frontWallCheckPoint: {fileID: 498650625}
+  _backWallCheckPoint: {fileID: 580288220}
+  _wallCheckSize: {x: 0.1, y: 0.8}
   _groundLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -1168,7 +1171,7 @@ Transform:
   m_GameObject: {fileID: 498650624}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.5, y: 0, z: 0}
+  m_LocalPosition: {x: 0.34, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1199,7 +1202,7 @@ Transform:
   m_GameObject: {fileID: 580288219}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.5, y: 0, z: 0}
+  m_LocalPosition: {x: -0.34, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2957,7 +2960,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1379017795}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e49079d91229994a992f31b39bcf925, type: 3}
   m_Name: 
@@ -3381,7 +3384,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1580978385}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ab88d4dd85ebf845863a2f214501a20, type: 3}
   m_Name: 
@@ -4335,7 +4338,7 @@ PrefabInstance:
       objectReference: {fileID: 127680631}
     - target: {fileID: 915954824473953591, guid: bb99c8799b5f0c649b1cd531acaf6f30, type: 3}
       propertyPath: dialogueLines.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 915954824473953591, guid: bb99c8799b5f0c649b1cd531acaf6f30, type: 3}
       propertyPath: 'dialogueLines.Array.data[2]'
@@ -4354,9 +4357,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 421797644}
     - target: {fileID: 3786781144416956397, guid: bb99c8799b5f0c649b1cd531acaf6f30, type: 3}
+      propertyPath: upgradeCost
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3786781144416956397, guid: bb99c8799b5f0c649b1cd531acaf6f30, type: 3}
       propertyPath: playerMining
       value: 
       objectReference: {fileID: 421797649}
+    - target: {fileID: 3786781144416956397, guid: bb99c8799b5f0c649b1cd531acaf6f30, type: 3}
+      propertyPath: damageIncrease
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8427691209262983005, guid: bb99c8799b5f0c649b1cd531acaf6f30, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.2703

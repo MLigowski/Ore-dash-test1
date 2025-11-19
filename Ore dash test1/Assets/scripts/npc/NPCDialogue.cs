@@ -5,12 +5,13 @@ public class NPCDialogue : MonoBehaviour
 {
     public GameObject dialoguePanel;        // Panel dialogowy
     public TMP_Text dialogueText;           // Tekst dialogu (TextMeshPro)
-    public string[] dialogueLines;          // Linie dialogu
+    public string[] dialogueLines;          // Linie dialogu przed pytaniem
 
     public DamageUpgrade damageUpgrade;     // Referencja do skryptu DamageUpgrade
 
     private int currentLine = 0;
     private bool playerNearby = false;
+    private bool waitingForChoice = false;
 
     void Update()
     {
@@ -22,7 +23,7 @@ public class NPCDialogue : MonoBehaviour
                 currentLine = 0;
                 ShowLine();
             }
-            else
+            else if (!waitingForChoice)
             {
                 currentLine++;
                 if (currentLine < dialogueLines.Length)
@@ -31,17 +32,34 @@ public class NPCDialogue : MonoBehaviour
                 }
                 else
                 {
-                    dialoguePanel.SetActive(false);
-                    // Po zakoñczeniu dialogu wywo³ujemy ulepszenie damage
-                    if (damageUpgrade != null)
-                    {
-                        damageUpgrade.UpgradeDamage();
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Brak przypisanego DamageUpgrade w NPCDialogue!");
-                    }
+                    // Po ostatniej linii dialogu pytamy gracza o decyzjê
+                    dialogueText.text = "Would you like to exchange ores for some strengh? [Y/N]";
+                    waitingForChoice = true;
                 }
+            }
+            else if (waitingForChoice)
+            {
+                // Nic tu nie robimy, czekamy na Y/N
+            }
+        }
+
+        if (waitingForChoice)
+        {
+            if (Input.GetKeyDown(KeyCode.Y))
+            {
+                // Gracz wybra³ TAK
+                if (damageUpgrade != null)
+                {
+                    damageUpgrade.UpgradeDamage();
+                }
+                dialoguePanel.SetActive(false);
+                waitingForChoice = false;
+            }
+            else if (Input.GetKeyDown(KeyCode.N))
+            {
+                // Gracz wybra³ NIE
+                dialoguePanel.SetActive(false);
+                waitingForChoice = false;
             }
         }
     }
@@ -56,7 +74,7 @@ public class NPCDialogue : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerNearby = true;
-            // Tu mo¿esz dodaæ np. podpowiedŸ "Naciœnij E, aby rozmawiaæ"
+            // Mo¿esz tu dodaæ np. podpowiedŸ "Naciœnij E, aby rozmawiaæ"
         }
     }
 
@@ -66,7 +84,7 @@ public class NPCDialogue : MonoBehaviour
         {
             playerNearby = false;
             dialoguePanel.SetActive(false);
+            waitingForChoice = false;
         }
     }
 }
-

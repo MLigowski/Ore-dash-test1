@@ -4,17 +4,24 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     public PlayerData Data;
-    public Health Health; // Health component
+    public Health Health;
 
     #region Variables
     public Rigidbody2D RB { get; private set; }
 
     public bool IsFacingRight { get; private set; }
     public bool IsJumping { get; private set; }
+    public bool IsWallJumping { get; private set; }
     public bool IsSliding { get; private set; }
     public bool IsDashing { get; private set; }
 
     public float LastOnGroundTime { get; private set; }
+    public float LastOnWallTime { get; private set; }
+    public float LastOnWallRightTime { get; private set; }
+    public float LastOnWallLeftTime { get; private set; }
+
+    private float _wallJumpStartTime;
+    private int _lastWallJumpDir;
 
     private bool _isJumpCut;
     private bool _isJumpFalling;
@@ -26,9 +33,14 @@ public class PlayerMovement : MonoBehaviour
     [Header("Checks")]
     [SerializeField] private Transform _groundCheckPoint;
     [SerializeField] private Vector2 _groundCheckSize = new Vector2(0.49f, 0.03f);
+    [Space(5)]
+    [SerializeField] private Transform _frontWallCheckPoint;
+    [SerializeField] private Transform _backWallCheckPoint;
+    [SerializeField] private Vector2 _wallCheckSize = new Vector2(0.5f, 1f);
 
     [Header("Layers & Tags")]
     [SerializeField] private LayerMask _groundLayer;
+
 
     [Header("Jump")]
     [SerializeField] private float jumpCooldown = 0f;
@@ -62,6 +74,9 @@ public class PlayerMovement : MonoBehaviour
     {
         LastOnGroundTime -= Time.deltaTime;
         LastPressedJumpTime -= Time.deltaTime;
+        LastOnWallTime -= Time.deltaTime;
+        LastOnWallRightTime -= Time.deltaTime;
+        LastOnWallLeftTime -= Time.deltaTime;
 
         _moveInput.x = Input.GetAxisRaw("Horizontal");
         _moveInput.y = Input.GetAxisRaw("Vertical");
@@ -86,31 +101,72 @@ public class PlayerMovement : MonoBehaviour
             _airDashesUsed = 0;
         }
 
+        // === WALL CHECKS ===
+        if (!IsDashing && !IsJumping)
+        {
+            bool rightWall = ((Physics2D.OverlapBox(_frontWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight)
+                || (Physics2D.OverlapBox(_backWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && !IsFacingRight)) && !IsWallJumping;
+
+            bool leftWall = ((Physics2D.OverlapBox(_frontWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && !IsFacingRight)
+                || (Physics2D.OverlapBox(_backWallCheckPoint.position, _wallCheckSize, 0, _groundLayer) && IsFacingRight)) && !IsWallJumping;
+
+            if (rightWall)
+                LastOnWallRightTime = Data.coyoteTime;
+            if (leftWall)
+                LastOnWallLeftTime = Data.coyoteTime;
+
+            LastOnWallTime = Mathf.Max(LastOnWallLeftTime, LastOnWallRightTime);
+        }
+
         if (IsDashing) return;
 
+        // === JUMP & WALL JUMP LOGIC ===
         if (IsJumping && RB.linearVelocity.y < 0)
         {
             IsJumping = false;
             _isJumpFalling = true;
         }
 
-        if (LastOnGroundTime > 0 && !IsJumping)
+        if (IsWallJumping && Time.time - _wallJumpStartTime > Data.wallJumpTime)
+            IsWallJumping = false;
+
+        if (LastOnGroundTime > 0 && !IsJumping && !IsWallJumping)
         {
             _isJumpCut = false;
             _isJumpFalling = false;
         }
 
         if (CanJump() && LastPressedJumpTime > 0)
+        {
             Jump();
+        }
+        else if (CanWallJump() && LastPressedJumpTime > 0)
+        {
+            IsWallJumping = true;
+            IsJumping = false;
+            _isJumpCut = false;
+            _isJumpFalling = false;
 
-        IsSliding = false;
+            _wallJumpStartTime = Time.time;
+            _lastWallJumpDir = (LastOnWallRightTime > 0) ? -1 : 1;
 
-        if (_isJumpCut)
+            WallJump(_lastWallJumpDir);
+        }
+
+        // === SLIDE CHECK ===
+        IsSliding = CanSlide() && ((LastOnWallLeftTime > 0 && _moveInput.x < 0) || (LastOnWallRightTime > 0 && _moveInput.x > 0));
+
+        // === GRAVITY ===
+        if (IsSliding)
+        {
+            SetGravityScale(0);
+        }
+        else if (_isJumpCut)
         {
             SetGravityScale(Data.gravityScale * Data.jumpCutGravityMult);
             RB.linearVelocity = new Vector2(RB.linearVelocity.x, Mathf.Max(RB.linearVelocity.y, -Data.maxFallSpeed));
         }
-        else if ((IsJumping || _isJumpFalling) && Mathf.Abs(RB.linearVelocity.y) < Data.jumpHangTimeThreshold)
+        else if ((IsJumping || _isJumpFalling || IsWallJumping) && Mathf.Abs(RB.linearVelocity.y) < Data.jumpHangTimeThreshold)
         {
             SetGravityScale(Data.gravityScale * Data.jumpHangGravityMult);
         }
@@ -129,7 +185,10 @@ public class PlayerMovement : MonoBehaviour
     {
         if (IsDashing) return;
 
-        Run(1);
+        if (IsSliding)
+            Slide();
+        else
+            Run(1);
     }
 
     #region INPUT CALLBACKS
@@ -182,9 +241,6 @@ public class PlayerMovement : MonoBehaviour
     #region JUMP METHODS
     private void Jump()
     {
-        if (!Physics2D.OverlapBox(_groundCheckPoint.position, _groundCheckSize, 0, _groundLayer))
-            return;
-
         _lastJumpTime = Time.time;
         LastPressedJumpTime = 0;
         _hasJumpedSinceGrounded = true;
@@ -197,12 +253,54 @@ public class PlayerMovement : MonoBehaviour
         _isJumpFalling = false;
     }
 
-    private bool CanJump()
+    private void WallJump(int dir)
     {
-        return Physics2D.OverlapBox(_groundCheckPoint.position, _groundCheckSize, 0, _groundLayer);
+        LastPressedJumpTime = 0;
+        LastOnGroundTime = 0;
+        LastOnWallRightTime = 0;
+        LastOnWallLeftTime = 0;
+
+        Vector2 force = new Vector2(Data.wallJumpForce.x * dir, Data.wallJumpForce.y);
+
+        if (Mathf.Sign(RB.linearVelocity.x) != Mathf.Sign(force.x))
+            force.x -= RB.linearVelocity.x;
+
+        if (RB.linearVelocity.y < 0)
+            force.y -= RB.linearVelocity.y;
+
+        RB.AddForce(force, ForceMode2D.Impulse);
+    }
+
+    private bool CanJump() => LastOnGroundTime > 0 && !IsJumping;
+
+    private bool CanWallJump()
+    {
+        return LastPressedJumpTime > 0 && LastOnWallTime > 0 && LastOnGroundTime <= 0 &&
+            (!IsWallJumping ||
+            (LastOnWallRightTime > 0 && _lastWallJumpDir == 1) ||
+            (LastOnWallLeftTime > 0 && _lastWallJumpDir == -1));
     }
 
     private bool CanJumpCut() => IsJumping && RB.linearVelocity.y > 0;
+    #endregion
+
+    #region WALL SLIDE
+    private void Slide()
+    {
+        if (RB.linearVelocity.y > 0)
+            RB.AddForce(-RB.linearVelocity.y * Vector2.up, ForceMode2D.Impulse);
+
+        float speedDif = Data.slideSpeed - RB.linearVelocity.y;
+        float movement = speedDif * Data.slideAccel;
+        movement = Mathf.Clamp(movement, -Mathf.Abs(speedDif) * (1 / Time.fixedDeltaTime), Mathf.Abs(speedDif) * (1 / Time.fixedDeltaTime));
+
+        RB.AddForce(movement * Vector2.up);
+    }
+
+    private bool CanSlide()
+    {
+        return LastOnWallTime > 0 && !IsJumping && !IsWallJumping && !IsDashing && LastOnGroundTime <= 0;
+    }
     #endregion
 
     #region DASH METHODS
@@ -223,14 +321,12 @@ public class PlayerMovement : MonoBehaviour
         if (LastOnGroundTime <= 0)
             _airDashesUsed++;
 
-        
         Vector2 inputDir = new Vector2(_moveInput.x, 0f);
         if (inputDir == Vector2.zero)
             inputDir = IsFacingRight ? Vector2.right : Vector2.left;
 
         inputDir.Normalize();
         _dashDir = inputDir;
-
 
         float originalGravity = RB.gravityScale;
         SetGravityScale(0);
@@ -279,8 +375,10 @@ public class PlayerMovement : MonoBehaviour
     {
         Gizmos.color = Color.green;
         Gizmos.DrawWireCube(_groundCheckPoint.position, _groundCheckSize);
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(_frontWallCheckPoint.position, _wallCheckSize);
+        Gizmos.DrawWireCube(_backWallCheckPoint.position, _wallCheckSize);
     }
     #endregion
 }
-
-

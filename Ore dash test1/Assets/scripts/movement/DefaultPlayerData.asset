@@ -34,7 +34,7 @@ MonoBehaviour:
   jumpHangTimeThreshold: 2
   jumpHangAccelerationMult: 1
   jumpHangMaxSpeedMult: 0.8
-  wallJumpForce: {x: 8, y: 15}
+  wallJumpForce: {x: 4, y: 7}
   wallJumpRunLerp: 0.5
   wallJumpTime: 0.2
   doTurnOnWallJump: 1

@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class DamageUpgrade : MonoBehaviour
 {
-    public int upgradeCost = 5;         // ile mineralow za 1 damage
+    public int upgradeCost = 3;         // ile mineralow za 1 damage
     public int damageIncrease = 1;
 
-    public PlayerMining playerMining;    // referencja do PlayerMining (zawiera mineraly)
-    public PlayerStats playerStats;      // referencja do PlayerStats (damage)
+    public PlayerMining playerMining;    
+    public PlayerStats playerStats;      
 
     public KeyCode upgradeKey = KeyCode.U; // klawisz do ulepszania
 
@@ -20,15 +20,15 @@ public class DamageUpgrade : MonoBehaviour
 
     public void UpgradeDamage()
     {
-        // Sprawdzamy, czy gracz ma wystarczajaco mineralow
+        
         if (GetMinerals() >= upgradeCost)
         {
             SpendMinerals(upgradeCost);
             playerStats.IncreaseDamage(damageIncrease);
             Debug.Log($"Ulepszono damage za {upgradeCost} mineralow!");
 
-            // Zwiekszamy koszt ulepszenia o 5
-            upgradeCost += 5;
+            
+            upgradeCost += 0;
         }
         else
         {
