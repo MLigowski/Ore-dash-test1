@@ -105,6 +105,8 @@ public class PlayerMovement : MonoBehaviour
             LastOnGroundTime = Data.coyoteTime;
             _hasJumpedSinceGrounded = false;
             _airDashesUsed = 0;
+            _lastWallJumpDir = 0;
+
         }
 
         // === WALL CHECKS ===
@@ -280,11 +282,10 @@ public class PlayerMovement : MonoBehaviour
     private void WallJump(int dir)
     {
         _lastWallJumpTime = Time.time;
-        _canWallJump = true; // blokada
+        _lastWallJumpDir = dir;  // <-- potrzebne
+
         LastPressedJumpTime = 0;
-        LastOnGroundTime = 0;
-        LastOnWallRightTime = 0;
-        LastOnWallLeftTime = 0;
+        LastOnGroundTime = 0;    // to ok
 
         Vector2 force = new Vector2(Data.wallJumpForce.x * dir, Data.wallJumpForce.y);
 
@@ -299,22 +300,34 @@ public class PlayerMovement : MonoBehaviour
         SetGravityScale(Data.gravityScale);
     }
 
+    private int CurrentWallDir()
+    {
+        if (LastOnWallRightTime > 0) return -1; // prawa ściana → odbicie w lewo
+        if (LastOnWallLeftTime > 0) return 1;  // lewa ściana → odbicie w prawo
+        return 0; // nie jesteś na ścianie
+    }
+
 
 
     private bool CanJump() => LastOnGroundTime > 0 && !IsJumping;
 
     private bool CanWallJump()
     {
-        return
-            LastPressedJumpTime > 0 &&
-            LastOnWallTime > 0 &&
-            LastOnGroundTime <= 0 &&
-            _canWallJump &&
-            Time.time - _lastWallJumpTime >= wallJumpCooldown &&
-            (!IsWallJumping ||
-             (LastOnWallRightTime > 0 && _lastWallJumpDir == 1) ||
-             (LastOnWallLeftTime > 0 && _lastWallJumpDir == -1));
+        if (LastPressedJumpTime <= 0) return false;
+        if (LastOnWallTime <= 0) return false;
+        if (LastOnGroundTime > 0) return false;
+
+        int wallDir = CurrentWallDir();
+        if (wallDir == 0) return false;
+
+        // BLOKADA: nie 2x w tę samą stronę
+        if (_lastWallJumpDir == wallDir)
+            return false;
+
+        return true;
     }
+
+
 
     private bool CanJumpCut() => IsJumping && RB.linearVelocity.y > 0;
     #endregion
