@@ -12,6 +12,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - BLUR_ON
   - CONTRAST_ON
   - GLITCH_ON
   - GLOWTEX_ON
@@ -167,7 +168,7 @@ Material:
     - _Blend: 0
     - _BlendOp: 0
     - _BlurHD: 0
-    - _BlurIntensity: 64.4
+    - _BlurIntensity: 100
     - _Brightness: -0.377
     - _BumpScale: 1
     - _ChromAberrAlpha: 0.4
@@ -199,7 +200,7 @@ Material:
     - _DistortTexYSpeed: 5
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EditorDrawers: 7
+    - _EditorDrawers: 6
     - _EnableExternalAlpha: 0
     - _FadeAmount: 0.189
     - _FadeBurnGlow: 2
