@@ -1,15 +1,15 @@
-ï»¿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using System.Collections;
 
 public class StoneBlock : MonoBehaviour
 {
-    [Header("WÂ³aÅ“ciwoÅ“ci kamienia")]
-    [Tooltip("Ile mineraÂ³Ã³w lub punktÃ³w gracz otrzymuje po zniszczeniu tego bloku.")]
+    [Header("W³aœciwoœci kamienia")]
+    [Tooltip("Ile minera³ów lub punktów gracz otrzymuje po zniszczeniu tego bloku.")]
     public int stoneValue = 0;
 
-    [Header("WytrzymaÂ³oÅ“Ã¦ bloku")]
-    [Tooltip("Ile uderzeÃ± potrzeba, Â¿eby zniszczyÃ¦ kamieÃ±.")]
+    [Header("Wytrzyma³oœæ bloku")]
+    [Tooltip("Ile uderzeñ potrzeba, ¿eby zniszczyæ kamieñ.")]
     public int hitsToBreak = 4;
 
     private int currentHits = 0;
@@ -17,17 +17,17 @@ public class StoneBlock : MonoBehaviour
     private Color originalColor;
 
     [Header("UI (opcjonalne)")]
-    [Tooltip("Prefab z TextMeshPro 3D, ktÃ³ry pokazuje ile uderzeÃ± pozostaÂ³o.")]
+    [Tooltip("Prefab z TextMeshPro 3D, który pokazuje ile uderzeñ pozosta³o.")]
     public TextMeshPro worldTextPrefab;
 
     private TextMeshPro worldTextInstance;
 
-    [Header("Opcje wyÅ“wietlania tekstu")]
+    [Header("Opcje wyœwietlania tekstu")]
     [Tooltip("Offset tekstu nad blokiem.")]
     public Vector3 textOffset = new Vector3(0, 0.6f, -0.01f);
     [Tooltip("Skala prefab TextMeshPro.")]
     public float textScale = 0.5f;
-    [Tooltip("Ile sekund tekst ma siÃª pokazaÃ¦ jeÅ“li nie uderzono bloku ponownie.")]
+    [Tooltip("Ile sekund tekst ma siê pokazaæ jeœli nie uderzono bloku ponownie.")]
     public float textDisplayTime = 1.1f;
 
     private Coroutine hideTextCoroutine;
@@ -55,7 +55,7 @@ public class StoneBlock : MonoBehaviour
         currentHits += damage;
         int remaining = hitsToBreak - currentHits;
 
-        // Efekt wizualny â€“ kamieÃ± jaÅ“nieje przy uderzeniu
+        // Efekt wizualny – kamieñ jaœnieje przy uderzeniu
         if (sr != null)
         {
             float t = Mathf.Clamp01((float)currentHits / hitsToBreak);
@@ -64,7 +64,7 @@ public class StoneBlock : MonoBehaviour
 
         ShowHitText(remaining);
 
-        // Zniszczenie po osiÂ¹gniÃªciu limitu uderzeÃ±
+        // Zniszczenie po osi¹gniêciu limitu uderzeñ
         if (remaining <= 0)
         {
             CollectStone();
@@ -81,7 +81,7 @@ public class StoneBlock : MonoBehaviour
             var renderer = worldTextInstance.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                renderer.sortingLayerName = "Mineral"; // lub "Ground" â€“ zaleÂ¿nie od projektu
+                renderer.sortingLayerName = "Mineral"; // lub "Ground" – zale¿nie od projektu
                 renderer.sortingOrder = 100;
             }
         }
@@ -110,7 +110,7 @@ public class StoneBlock : MonoBehaviour
 
     private void CollectStone()
     {
-        // MoÂ¿na tu dodaÃ¦ np. dodawanie punktÃ³w do gracza
+        // Mo¿na tu dodaæ np. dodawanie punktów do gracza
         if (stoneValue > 0 && PlayerMining.Instance != null)
         {
             PlayerMining.Instance.AddMinerals(stoneValue);
@@ -132,4 +132,3 @@ public class StoneBlock : MonoBehaviour
         }
     }
 }
-

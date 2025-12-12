@@ -154,7 +154,7 @@ public class Health : MonoBehaviour
 
         if (spriteRenderer != null)
             spriteRenderer.enabled = false;
-
+        
         if (mainCam != null)
         {
             cameraFrozen = true;  // zapamiętaj że kamera stoi
