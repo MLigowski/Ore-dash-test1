@@ -95,6 +95,9 @@ public class AttackArea : MonoBehaviour
 
         if (collider.TryGetComponent(out Zombie zombie))
             zombie.TakeDamage(damage);
+
+        if (collider.TryGetComponent(out Bringer_Of_Death bod))
+            bod.TakeDamage(damage);
     }
 
     private void DrawCircle()

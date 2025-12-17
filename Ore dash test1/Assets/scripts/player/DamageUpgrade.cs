@@ -2,16 +2,33 @@ using UnityEngine;
 
 public class DamageUpgrade : MonoBehaviour
 {
-    public int upgradeCost = 3;         // ile mineralow za 1 damage
-    public int damageIncrease = 1;
+    [Header("Upgrade settings")]
+    public int upgradeCost = 3;        // koszt w minera³ach
+    public int damageIncrease = 1;     // ile dmg dodaje upgrade
 
-    public PlayerMining playerMining;    
-    public PlayerStats playerStats;      
+    [Header("References")]
+    public PlayerStats playerStats;    // PlayerStats gracza
 
-    public KeyCode upgradeKey = KeyCode.U; // klawisz do ulepszania
+    [Header("Input (opcjonalne)")]
+    public KeyCode upgradeKey = KeyCode.U;
+
+    void Start()
+    {
+        // Auto-przypisanie PlayerStats jeœli nie ustawione w Inspectorze
+        if (playerStats == null)
+        {
+            playerStats = FindObjectOfType<PlayerStats>();
+        }
+
+        if (playerStats == null)
+        {
+            Debug.LogError("DamageUpgrade: NIE znaleziono PlayerStats!");
+        }
+    }
 
     void Update()
     {
+        // Opcjonalne ulepszanie z klawiatury (debug)
         if (Input.GetKeyDown(upgradeKey))
         {
             UpgradeDamage();
@@ -20,31 +37,30 @@ public class DamageUpgrade : MonoBehaviour
 
     public void UpgradeDamage()
     {
-        
-        if (GetMinerals() >= upgradeCost)
+        // Zabezpieczenia
+        if (PlayerMining.Instance == null)
         {
-            SpendMinerals(upgradeCost);
-            playerStats.IncreaseDamage(damageIncrease);
-            Debug.Log($"Ulepszono damage za {upgradeCost} mineralow!");
-
-            
-            upgradeCost += 0;
+            Debug.LogError("DamageUpgrade: PlayerMining.Instance == null");
+            return;
         }
-        else
+
+        if (playerStats == null)
         {
-            Debug.Log("Za malo mineralow!");
+            Debug.LogError("DamageUpgrade: PlayerStats == null");
+            return;
         }
-    }
 
-    private int GetMinerals()
-    {
-        return playerMining.GetMineralCount();
-    }
+        // Sprawdzenie kosztu
+        if (PlayerMining.Instance.GetMineralCount() < upgradeCost)
+        {
+            Debug.Log("Za ma³o minera³ów!");
+            return;
+        }
 
-    private void SpendMinerals(int amount)
-    {
-        playerMining.SpendMinerals(amount);
+        // P³atnoœæ + upgrade
+        PlayerMining.Instance.SpendMinerals(upgradeCost);
+        playerStats.IncreaseDamage(damageIncrease);
+
+        Debug.Log($"Ulepszono DMG o +{damageIncrease}. Aktualny DMG: {playerStats.TotalDamage}");
     }
 }
-
-
