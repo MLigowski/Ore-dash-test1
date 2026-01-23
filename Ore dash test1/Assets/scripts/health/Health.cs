@@ -66,6 +66,17 @@ public class Health : MonoBehaviour
         UpdateHealthText();
         UpdateHealCooldownUI();
         UpdateDeathCounterUI();
+
+        if (healthTextTMP != null)
+        {
+            MeshRenderer meshRenderer = healthTextTMP.GetComponent<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                meshRenderer.sortingLayerName = "UI";   // utwórz warstwę UI jeśli jej nie ma
+                meshRenderer.sortingOrder = 500;       // duża liczba = zawsze nad innymi
+            }
+        }
+
     }
 
     void Update()
