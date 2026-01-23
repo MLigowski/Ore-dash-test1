@@ -47,7 +47,7 @@ public class NPCDialogue : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Y))
             {
-                // Gracz wybra³ TAK
+                
                 if (damageUpgrade != null)
                 {
                     damageUpgrade.UpgradeDamage();
@@ -57,7 +57,7 @@ public class NPCDialogue : MonoBehaviour
             }
             else if (Input.GetKeyDown(KeyCode.N))
             {
-                // Gracz wybra³ NIE
+                
                 dialoguePanel.SetActive(false);
                 waitingForChoice = false;
             }
@@ -74,7 +74,7 @@ public class NPCDialogue : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerNearby = true;
-            // Mo¿esz tu dodaæ np. podpowiedŸ "Naciœnij E, aby rozmawiaæ"
+            
         }
     }
 

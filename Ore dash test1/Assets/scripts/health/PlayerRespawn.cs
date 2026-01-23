@@ -4,10 +4,10 @@ using System.Collections;
 public class PlayerRespawn : MonoBehaviour
 {
     [Header("Ustawienia Respawnu")]
-    [Tooltip("Miejsce, w którym gracz siê odradza po œmierci.")]
-    public Transform spawnPoint; // ?? Teraz publiczne — widoczne w Inspectorze!
+    [Tooltip("Miejsce, w kt�rym gracz si� odradza po �mierci.")]
+    public Transform spawnPoint; // ?? Teraz publiczne � widoczne w Inspectorze!
 
-    [Tooltip("Jak d³ugo po respawnie gracz jest nieœmiertelny (w sekundach).")]
+    [Tooltip("Jak d�ugo po respawnie gracz jest nie�miertelny (w sekundach).")]
     public float invincibilityTime = 5f; // ?? Edytowalne w Inspectorze
 
     private bool invincible = false;
@@ -17,7 +17,7 @@ public class PlayerRespawn : MonoBehaviour
     {
         sr = GetComponent<SpriteRenderer>();
 
-        // Jeœli spawnPoint
+        // Je�li spawnPoint nie jest przypi�ty, spr�buj znale�� pusty obiekt o nazwie "SpawnPoint"
         if (spawnPoint == null)
         {
             GameObject found = GameObject.Find("SpawnPoint");
@@ -30,14 +30,14 @@ public class PlayerRespawn : MonoBehaviour
     {
         if (spawnPoint == null)
         {
-            Debug.LogWarning("?? SpawnPoint nie zosta³ przypiêty do PlayerRespawn!");
+            Debug.LogWarning("?? SpawnPoint nie zosta� przypi�ty do PlayerRespawn!");
             return;
         }
 
-        // ?? Przenieœ gracza na spawn
+        // ?? Przenie� gracza na spawn
         transform.position = spawnPoint.position;
 
-        // ?? Uruchom okres nimiertelnoœci
+        // ?? Uruchom okres nie�miertelno�ci
         StartCoroutine(InvincibilityPeriod());
     }
 

@@ -14,11 +14,10 @@ public class PlayerAttack : MonoBehaviour
         {
             if (attackArea != null)
             {
-                var stats = GetComponent<PlayerStats>();
-                if (stats != null)
-                    attackArea.PerformAttack(stats.TotalDamage);
-            }
+                attackArea.PerformAttack();
 
+
+            }
 
             lastAttackTime = Time.time;
         }

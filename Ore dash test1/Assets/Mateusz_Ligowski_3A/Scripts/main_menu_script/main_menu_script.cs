@@ -12,7 +12,7 @@ public class main_menu_script : MonoBehaviour
 
     public void QuitGame()
     {
-
+        Debug.Log("QUIT GAME");
         Application.Quit();
     }
 }

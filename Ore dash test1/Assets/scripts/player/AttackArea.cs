@@ -6,38 +6,25 @@ using System.Collections;
 public class AttackArea : MonoBehaviour
 {
     [Header("Attack Settings")]
-    [Tooltip("Ile HP zabiera atak.")]
     public int damage = 3;
-
-    [Tooltip("Promień ataku (zasięg).")]
     public float range = 1.2f;
-
-    [Tooltip("Jak długo atak jest aktywny (sekundy).")]
     public float attackDuration = 0.15f;
-
-    [Tooltip("Jak długo widoczne jest czerwone podświetlenie.")]
     public float flashDuration = 0.2f;
 
-    private Transform player;
     private CircleCollider2D circleCollider;
     private LineRenderer lineRenderer;
-
     private bool canDamage = false;
+
+    [Header("Position Offset")]
+    public Vector2 forwardOffset = new Vector2(0.8f, 0f);
 
     void Start()
     {
-        // Szukamy gracza
-        player = GameObject.FindGameObjectWithTag("Player")?.transform;
-        if (player == null)
-        {
-            Debug.LogError("❌ AttackArea: Nie znaleziono obiektu z tagiem 'Player'!");
-            return;
-        }
-
         // Collider
         circleCollider = GetComponent<CircleCollider2D>();
         circleCollider.isTrigger = true;
-        circleCollider.enabled = false; // tylko podczas ataku
+        circleCollider.enabled = false;
+        circleCollider.offset = forwardOffset; // ustaw offset zamiast ruszać transform.position
 
         // LineRenderer — efekt czerwonego koła
         lineRenderer = GetComponent<LineRenderer>();
@@ -53,18 +40,12 @@ public class AttackArea : MonoBehaviour
         DrawCircle();
     }
 
-    void Update()
-    {
-        if (player == null) return;
-        transform.position = player.position; // AttackArea podąża za graczem
-    }
+    // Usuwamy Update() – nie ruszamy transform.position
 
-    public void PerformAttack(int currentDamage)
+    public void PerformAttack()
     {
-        damage = currentDamage; // pobiera damage z PlayerStats
         StartCoroutine(AttackRoutine());
     }
-
 
     private IEnumerator AttackRoutine()
     {
@@ -82,22 +63,25 @@ public class AttackArea : MonoBehaviour
 
         FlashCircle(false);
     }
+    [Header("References")]
+    public PlayerStats playerStats; // referencja do PlayerStats
 
     private void OnTriggerEnter2D(Collider2D collider)
     {
-        if (!canDamage) return;
+        int currentDamage = (playerStats != null) ? playerStats.TotalDamage : damage;
 
         if (collider.TryGetComponent(out Health health))
-            health.Damage(damage);
+            health.Damage(currentDamage);
 
         if (collider.TryGetComponent(out Slime slime))
-            slime.TakeDamage(damage);
+            slime.TakeDamage(currentDamage);
 
         if (collider.TryGetComponent(out Zombie zombie))
-            zombie.TakeDamage(damage);
+            zombie.TakeDamage(currentDamage);
 
-        if (collider.TryGetComponent(out Bringer_Of_Death bod))
-            bod.TakeDamage(damage);
+        if (collider.TryGetComponent(out Bringer_Of_Death enemy))
+            enemy.TakeDamage(currentDamage);
+
     }
 
     private void DrawCircle()
@@ -119,4 +103,5 @@ public class AttackArea : MonoBehaviour
         lineRenderer.startColor = start;
         lineRenderer.endColor = end;
     }
+
 }
