@@ -16,7 +16,12 @@ public class PlayerAttack : MonoBehaviour
             {
                 attackArea.PerformAttack();
 
-
+                // Spowolnienie gracza po ataku
+                PlayerMovement playerMovement = GetComponent<PlayerMovement>();
+                if (playerMovement != null)
+                {
+                    playerMovement._attackSlowTimer = playerMovement.attackSlowDuration;
+                }
             }
 
             lastAttackTime = Time.time;

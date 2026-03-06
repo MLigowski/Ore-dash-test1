@@ -51,6 +51,12 @@ public class PlayerMovement : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private float jumpCooldown = 0f;
     private float _lastJumpTime;
+
+    [Header("Attack Slow")]
+    public float attackSlowDuration = 0.2f;  // czas spowolnienia w sekundach
+    public float attackSlowMultiplier = 0.5f; // ile razy zmniejszamy prędkość (0.5 = połowa prędkości)
+
+    public float _attackSlowTimer = 0f;
     #endregion
 
     #region Dash Variables
@@ -83,6 +89,11 @@ public class PlayerMovement : MonoBehaviour
         LastOnWallTime -= Time.deltaTime;
         LastOnWallRightTime -= Time.deltaTime;
         LastOnWallLeftTime -= Time.deltaTime;
+
+        if (_attackSlowTimer > 0)
+        {
+            _attackSlowTimer -= Time.deltaTime;
+        }
 
         _moveInput.x = Input.GetAxisRaw("Horizontal");
         _moveInput.y = Input.GetAxisRaw("Vertical");
@@ -234,7 +245,8 @@ public class PlayerMovement : MonoBehaviour
     #region RUN METHODS
     private void Run(float lerpAmount)
     {
-        float targetSpeed = _moveInput.x * Data.runMaxSpeed;
+        float speedMultiplier = (_attackSlowTimer > 0) ? attackSlowMultiplier : 1f;
+        float targetSpeed = _moveInput.x * Data.runMaxSpeed * speedMultiplier;
         float currentXSpeed = RB.linearVelocity.x;
         float speedDif = targetSpeed - currentXSpeed;
 
