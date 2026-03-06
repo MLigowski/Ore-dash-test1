@@ -1,13 +1,13 @@
 using UnityEngine;
 using TMPro;
 
-public class NPCDialogue : MonoBehaviour
+public class NPCDialogueHealth : MonoBehaviour
 {
-    public GameObject dialoguePanel;        // Panel dialogowy
-    public TMP_Text dialogueText;           // Tekst dialogu (TextMeshPro)
-    public string[] dialogueLines;          // Linie dialogu przed pytaniem
+    public GameObject dialoguePanel;
+    public TMP_Text dialogueText;
+    public string[] dialogueLines;
 
-    public DamageUpgrade damageUpgrade;     // Referencja do skryptu DamageUpgrade
+    public HealthUpgrade healthUpgrade;
 
     private int currentLine = 0;
     private bool playerNearby = false;
@@ -32,14 +32,13 @@ public class NPCDialogue : MonoBehaviour
                 }
                 else
                 {
-                    // Po ostatniej linii dialogu pytamy gracza o decyzjê
-                    dialogueText.text = "exchange ores for more damage? [Y/N]";
+                    dialogueText.text = "Exchange ores for more health? [Y/N]";
                     waitingForChoice = true;
                 }
             }
             else if (waitingForChoice)
             {
-                // Nic tu nie robimy, czekamy na Y/N
+                // Czekamy na Y/N, nic nie robimy
             }
         }
 
@@ -47,17 +46,15 @@ public class NPCDialogue : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Y))
             {
-                
-                if (damageUpgrade != null)
+                if (healthUpgrade != null)
                 {
-                    damageUpgrade.UpgradeDamage();
+                    healthUpgrade.UpgradeHealth();
                 }
                 dialoguePanel.SetActive(false);
                 waitingForChoice = false;
             }
             else if (Input.GetKeyDown(KeyCode.N))
             {
-                
                 dialoguePanel.SetActive(false);
                 waitingForChoice = false;
             }
@@ -66,16 +63,16 @@ public class NPCDialogue : MonoBehaviour
 
     void ShowLine()
     {
-        dialogueText.text = dialogueLines[currentLine];
+        if (dialogueLines.Length > 0 && currentLine < dialogueLines.Length)
+        {
+            dialogueText.text = dialogueLines[currentLine];
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
-        {
             playerNearby = true;
-            
-        }
     }
 
     private void OnTriggerExit2D(Collider2D other)

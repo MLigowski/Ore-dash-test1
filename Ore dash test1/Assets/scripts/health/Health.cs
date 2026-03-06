@@ -225,7 +225,7 @@ public class Health : MonoBehaviour
             playerMovement.enabled = true;
     }
 
-    private void UpdateHealthText()
+    public void UpdateHealthText()
     {
         if (healthTextTMP == null) return;
 
@@ -246,7 +246,7 @@ public class Health : MonoBehaviour
         else healthTextTMP.color = Color.red;
     }
 
-    private void UpdateHealCooldownUI()
+    public void UpdateHealCooldownUI()
     {
         if (healCooldownText == null) return;
 
