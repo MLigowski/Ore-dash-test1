@@ -22,6 +22,10 @@ public class Bringer_Of_Death : MonoBehaviour
     public Animator animator;
     public TextMeshPro healthTextPrefab;
 
+    [Header("Arena Walls")]
+    public GameObject leftWall;
+    public GameObject rightWall;
+
     [Header("UI Offset")]
     public Vector3 healthOffset = new Vector3(0, 1.5f, 0);
 
@@ -29,22 +33,22 @@ public class Bringer_Of_Death : MonoBehaviour
     private Rigidbody2D rb;
     private bool facingRight = true;
     private bool isDead = false;
+    private bool fightStarted = false;
+
     private Health playerHealth;
-
-
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
-        playerHealth = player.GetComponent<Health>();
 
-        // Tworzymy HP tekst i dodajemy SLOT w inspectorze
+        if (player != null)
+            playerHealth = player.GetComponent<Health>();
+
         if (healthTextPrefab != null)
         {
             healthTextInstance = Instantiate(healthTextPrefab, transform.position + healthOffset, Quaternion.identity);
             healthTextInstance.text = $"HP:{currentHealth}/{maxHealth}";
-            healthTextInstance.ForceMeshUpdate();
             healthTextInstance.alignment = TextAlignmentOptions.Center;
 
             var rend = healthTextInstance.GetComponent<MeshRenderer>();
@@ -57,6 +61,13 @@ public class Bringer_Of_Death : MonoBehaviour
     {
         if (isDead || player == null) return;
 
+        // jeśli gracz umrze → otwórz ściany
+        if (playerHealth != null && playerHealth.currentHealth <= 0)
+        {
+            OpenArena();
+            return;
+        }
+
         if (playerHealth != null && (playerHealth.currentHealth <= 0 || Health.IsInvincible))
         {
             animator.SetBool("Attack", false);
@@ -66,23 +77,22 @@ public class Bringer_Of_Death : MonoBehaviour
             return;
         }
 
-        Health ph = player.GetComponent<Health>();
-        if (ph != null && ph.currentHealth <= 0) return;
-
-        // aktualizacja pozycji HP
         if (healthTextInstance != null)
             healthTextInstance.transform.position = transform.position + healthOffset;
 
         float dist = Vector2.Distance(transform.position, player.position);
 
-        // CELOWO ODWROTNIE — patrzy nie tam gdzie gracz
+        // start walki gdy boss wykryje gracza
+        if (!fightStarted && dist <= detectionRange)
+        {
+            StartFight();
+        }
+
         if (player.position.x > transform.position.x && facingRight)
             Flip();
         if (player.position.x < transform.position.x && !facingRight)
             Flip();
 
-
-        // poza zasięgiem → idle
         if (dist > detectionRange)
         {
             animator.SetBool("Idle", true);
@@ -91,17 +101,14 @@ public class Bringer_Of_Death : MonoBehaviour
             return;
         }
 
-        // blisko → atak
         if (dist <= attackRange)
         {
             TryAttack();
             return;
         }
 
-        // w gywno → chodzimy
         MoveTowardsPlayer();
     }
-
 
     void MoveTowardsPlayer()
     {
@@ -112,7 +119,6 @@ public class Bringer_Of_Death : MonoBehaviour
         rb.linearVelocity = new Vector2(dir * moveSpeed, rb.linearVelocity.y);
     }
 
-
     void TryAttack()
     {
         rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
@@ -120,13 +126,10 @@ public class Bringer_Of_Death : MonoBehaviour
         animator.SetBool("Walk", false);
         animator.SetBool("Idle", false);
 
-        if (Time.time >= lastAttackTime + 0.95f)
-
+        if (Time.time >= lastAttackTime + attackCooldown)
         {
             animator.SetBool("Attack", true);
             lastAttackTime = Time.time;
-            Invoke(nameof(ApplyDamageToPlayer), 0.1f);
-
         }
         else
         {
@@ -134,31 +137,15 @@ public class Bringer_Of_Death : MonoBehaviour
         }
     }
 
-    void ApplyDamageToPlayer()
-    {
-        if (player == null) return;
-        if (Health.IsInvincible) return; // ⛔ NIE BIJE PODCZAS DASH
-
-        Health ph = player.GetComponent<Health>();
-        if (ph == null || ph.currentHealth <= 0) return;
-
-        float dist = Vector2.Distance(transform.position, player.position);
-        if (dist <= attackRange + 0.2f)
-            ph.Damage(damage);
-    }
-
-
-
+    // ANIMATION EVENT
     public void DealDamage()
     {
-        if (Health.IsInvincible) return; // ⛔ blokada dmg przy dash
+        if (Health.IsInvincible) return;
         if (playerHealth == null || playerHealth.currentHealth <= 0) return;
 
         if (Vector2.Distance(transform.position, player.position) <= attackRange + 0.1f)
             playerHealth.Damage(damage);
     }
-
-
 
     public void TakeDamage(int dmg)
     {
@@ -167,22 +154,44 @@ public class Bringer_Of_Death : MonoBehaviour
         if (healthTextInstance != null)
         {
             healthTextInstance.text = $"HP:{currentHealth}/{maxHealth}";
-            healthTextInstance.ForceMeshUpdate(); // ← to wymusza odświeżenie TMP
         }
 
         if (currentHealth <= 0)
             Die();
     }
 
+    void StartFight()
+    {
+        fightStarted = true;
 
+        if (leftWall != null)
+            leftWall.SetActive(true);
+
+        if (rightWall != null)
+            rightWall.SetActive(true);
+    }
+
+    void OpenArena()
+    {
+        if (leftWall != null)
+            leftWall.SetActive(false);
+
+        if (rightWall != null)
+            rightWall.SetActive(false);
+    }
 
     void Die()
     {
         isDead = true;
-        animator.SetBool("isDead", true); // <- bool zamiast triggera
+        CancelInvoke();
+
+        OpenArena();
+
+        animator.SetBool("isDead", true);
         animator.SetBool("Walk", false);
         animator.SetBool("Idle", false);
         animator.SetBool("Attack", false);
+
         rb.linearVelocity = Vector2.zero;
 
         if (healthTextInstance != null)
@@ -190,8 +199,6 @@ public class Bringer_Of_Death : MonoBehaviour
 
         Destroy(gameObject, 1f);
     }
-
-
 
     void Flip()
     {

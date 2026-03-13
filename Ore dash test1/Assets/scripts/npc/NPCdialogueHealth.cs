@@ -9,9 +9,19 @@ public class NPCDialogueHealth : MonoBehaviour
 
     public HealthUpgrade healthUpgrade;
 
+    [Header("Quest Icon")]
+    public GameObject exclamationMark;  // Wykrzyknik nad NPC
+
     private int currentLine = 0;
     private bool playerNearby = false;
     private bool waitingForChoice = false;
+    private bool talked = false;       // czy gracz ju¿ rozmawia³
+
+    void Start()
+    {
+        if (exclamationMark != null)
+            exclamationMark.SetActive(!talked); // poka¿ jeœli jeszcze nie rozmawiano
+    }
 
     void Update()
     {
@@ -36,10 +46,6 @@ public class NPCDialogueHealth : MonoBehaviour
                     waitingForChoice = true;
                 }
             }
-            else if (waitingForChoice)
-            {
-                // Czekamy na Y/N, nic nie robimy
-            }
         }
 
         if (waitingForChoice)
@@ -47,16 +53,13 @@ public class NPCDialogueHealth : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Y))
             {
                 if (healthUpgrade != null)
-                {
                     healthUpgrade.UpgradeHealth();
-                }
-                dialoguePanel.SetActive(false);
-                waitingForChoice = false;
+
+                EndDialogue();
             }
             else if (Input.GetKeyDown(KeyCode.N))
             {
-                dialoguePanel.SetActive(false);
-                waitingForChoice = false;
+                EndDialogue();
             }
         }
     }
@@ -64,9 +67,17 @@ public class NPCDialogueHealth : MonoBehaviour
     void ShowLine()
     {
         if (dialogueLines.Length > 0 && currentLine < dialogueLines.Length)
-        {
             dialogueText.text = dialogueLines[currentLine];
-        }
+    }
+
+    private void EndDialogue()
+    {
+        dialoguePanel.SetActive(false);
+        waitingForChoice = false;
+        talked = true;
+
+        if (exclamationMark != null)
+            exclamationMark.SetActive(false); // po rozmowie wykrzyknik znika
     }
 
     private void OnTriggerEnter2D(Collider2D other)
