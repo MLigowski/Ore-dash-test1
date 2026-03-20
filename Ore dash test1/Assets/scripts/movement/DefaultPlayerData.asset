@@ -15,9 +15,9 @@ MonoBehaviour:
   gravityStrength: -19.83471
   gravityScale: 2.0218866
   fallGravityMult: 1
-  maxFallSpeed: 7
+  maxFallSpeed: 4.4
   fastFallGravityMult: 1
-  maxFastFallSpeed: 7
+  maxFastFallSpeed: 4.4
   runMaxSpeed: 5
   runAcceleration: 5
   runAccelAmount: 50.00002

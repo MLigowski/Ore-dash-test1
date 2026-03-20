@@ -37,10 +37,14 @@ public class Bringer_Of_Death : MonoBehaviour
 
     private Health playerHealth;
 
+    private Vector3 startPosition;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
+
+        startPosition = transform.position;
 
         if (player != null)
             playerHealth = player.GetComponent<Health>();
@@ -61,18 +65,18 @@ public class Bringer_Of_Death : MonoBehaviour
     {
         if (isDead || player == null) return;
 
-        // jeśli gracz umrze → otwórz ściany
+        float dist = Vector2.Distance(transform.position, player.position);
+
+        // Jeśli gracz nie żyje, wylecz boss'a i przywróć pozycję
         if (playerHealth != null && playerHealth.currentHealth <= 0)
         {
-            OpenArena();
+            HealAfterPlayerDeath();
             return;
         }
 
-        if (playerHealth != null && (playerHealth.currentHealth <= 0 || Health.IsInvincible))
+        // Jeśli gracz jest nietykalny, zatrzymaj boss'a
+        if (playerHealth != null && Health.IsInvincible)
         {
-            animator.SetBool("Attack", false);
-            animator.SetBool("Walk", false);
-            animator.SetBool("Idle", true);
             rb.linearVelocity = Vector2.zero;
             return;
         }
@@ -80,39 +84,38 @@ public class Bringer_Of_Death : MonoBehaviour
         if (healthTextInstance != null)
             healthTextInstance.transform.position = transform.position + healthOffset;
 
-        float dist = Vector2.Distance(transform.position, player.position);
-
-        // start walki gdy boss wykryje gracza
-        if (!fightStarted && dist <= detectionRange)
+        // Start walki, gdy gracz w zasięgu
+        if (dist <= detectionRange)
         {
             StartFight();
         }
 
+        // Obracanie boss'a w stronę gracza
         if (player.position.x > transform.position.x && facingRight)
             Flip();
         if (player.position.x < transform.position.x && !facingRight)
             Flip();
 
+        // Jeśli gracz poza zasięgiem, boss stoi w miejscu
         if (dist > detectionRange)
         {
-            animator.SetBool("Idle", true);
-            animator.SetBool("Walk", false);
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
             return;
         }
 
+        // Atak w zasięgu
         if (dist <= attackRange)
         {
             TryAttack();
             return;
         }
 
+        // Podchodzenie do gracza
         MoveTowardsPlayer();
     }
 
     void MoveTowardsPlayer()
     {
-        animator.SetBool("Idle", false);
         animator.SetBool("Walk", true);
 
         float dir = player.position.x > transform.position.x ? 1 : -1;
@@ -124,7 +127,6 @@ public class Bringer_Of_Death : MonoBehaviour
         rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
 
         animator.SetBool("Walk", false);
-        animator.SetBool("Idle", false);
 
         if (Time.time >= lastAttackTime + attackCooldown)
         {
@@ -137,7 +139,6 @@ public class Bringer_Of_Death : MonoBehaviour
         }
     }
 
-    // ANIMATION EVENT
     public void DealDamage()
     {
         if (Health.IsInvincible) return;
@@ -152,9 +153,7 @@ public class Bringer_Of_Death : MonoBehaviour
         currentHealth -= dmg;
 
         if (healthTextInstance != null)
-        {
             healthTextInstance.text = $"HP:{currentHealth}/{maxHealth}";
-        }
 
         if (currentHealth <= 0)
             Die();
@@ -166,7 +165,6 @@ public class Bringer_Of_Death : MonoBehaviour
 
         if (leftWall != null)
             leftWall.SetActive(true);
-
         if (rightWall != null)
             rightWall.SetActive(true);
     }
@@ -175,10 +173,12 @@ public class Bringer_Of_Death : MonoBehaviour
     {
         if (leftWall != null)
             leftWall.SetActive(false);
-
         if (rightWall != null)
             rightWall.SetActive(false);
     }
+
+    [Header("Teleport po śmierci")]
+    public AreaTeleport linkedTeleport; // przeciągnij w inspectorze
 
     void Die()
     {
@@ -189,13 +189,16 @@ public class Bringer_Of_Death : MonoBehaviour
 
         animator.SetBool("isDead", true);
         animator.SetBool("Walk", false);
-        animator.SetBool("Idle", false);
         animator.SetBool("Attack", false);
 
         rb.linearVelocity = Vector2.zero;
 
         if (healthTextInstance != null)
             Destroy(healthTextInstance.gameObject);
+
+        // Odblokowanie teleportu
+        if (linkedTeleport != null)
+            linkedTeleport.UnlockTeleport();
 
         Destroy(gameObject, 1f);
     }
@@ -206,5 +209,22 @@ public class Bringer_Of_Death : MonoBehaviour
         Vector3 s = transform.localScale;
         s.x *= -1;
         transform.localScale = s;
+    }
+
+    void HealAfterPlayerDeath()
+    {
+        // Przerwij walkę
+        fightStarted = false;
+
+        // Otwórz arenę
+        OpenArena();
+
+        // Przywróć zdrowie
+        currentHealth = maxHealth;
+        if (healthTextInstance != null)
+            healthTextInstance.text = $"HP:{currentHealth}/{maxHealth}";
+
+        // Przywróć startową pozycję
+        transform.position = startPosition;
     }
 }
